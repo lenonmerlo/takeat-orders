@@ -14,6 +14,7 @@ const openApiSpec = {
   ],
   tags: [
     { name: "Health", description: "Status da API" },
+    { name: "Inputs", description: "Operações de insumos" },
     { name: "Products", description: "Operações de produtos" },
   ],
   paths: {
@@ -178,6 +179,96 @@ const openApiSpec = {
         },
       },
     },
+    "/api/inputs": {
+      get: {
+        tags: ["Inputs"],
+        summary: "Lista insumos",
+        responses: {
+          200: {
+            description: "Lista de insumos",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "array",
+                  items: { $ref: "#/components/schemas/InputStock" },
+                },
+                examples: {
+                  success: { $ref: "#/components/examples/ListInputsExample" },
+                },
+              },
+            },
+          },
+          500: { $ref: "#/components/responses/InternalErrorResponse" },
+        },
+      },
+      post: {
+        tags: ["Inputs"],
+        summary: "Cria um insumo",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/CreateInputPayload" },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: "Insumo criado",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/InputStock" },
+                examples: {
+                  success: { $ref: "#/components/examples/CreateInputExample" },
+                },
+              },
+            },
+          },
+          400: { $ref: "#/components/responses/ValidationErrorResponse" },
+          500: { $ref: "#/components/responses/InternalErrorResponse" },
+        },
+      },
+    },
+    "/api/inputs/{id}/stock": {
+      patch: {
+        tags: ["Inputs"],
+        summary: "Atualiza estoque do insumo",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer", minimum: 1 },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UpdateStockPayload" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Estoque atualizado",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/InputStock" },
+                examples: {
+                  success: {
+                    $ref: "#/components/examples/UpdateStockSuccessExample",
+                  },
+                },
+              },
+            },
+          },
+          400: { $ref: "#/components/responses/ValidationErrorResponse" },
+          404: { $ref: "#/components/responses/InputNotFoundResponse" },
+          500: { $ref: "#/components/responses/InternalErrorResponse" },
+        },
+      },
+    },
   },
   components: {
     responses: {
@@ -202,6 +293,19 @@ const openApiSpec = {
             examples: {
               productNotFound: {
                 $ref: "#/components/examples/ProductNotFoundExample",
+              },
+            },
+          },
+        },
+      },
+      InputNotFoundResponse: {
+        description: "Insumo não encontrado",
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/ErrorResponse" },
+            examples: {
+              inputNotFound: {
+                $ref: "#/components/examples/InputNotFoundExample",
               },
             },
           },
@@ -256,6 +360,13 @@ const openApiSpec = {
           message: "Produto não encontrado",
         },
       },
+      InputNotFoundExample: {
+        summary: "Insumo inexistente",
+        value: {
+          error: "NOT_FOUND",
+          message: "Insumo não encontrado",
+        },
+      },
       MissingInputsExample: {
         summary: "Insumos inexistentes",
         value: {
@@ -271,6 +382,41 @@ const openApiSpec = {
         value: {
           error: "INTERNAL_ERROR",
           message: "Erro interno",
+        },
+      },
+      ListInputsExample: {
+        summary: "Lista de insumos",
+        value: [
+          {
+            id: 1,
+            name: "Pão",
+            stockQty: 10,
+            unit: "un",
+          },
+          {
+            id: 2,
+            name: "Carne",
+            stockQty: 5,
+            unit: "un",
+          },
+        ],
+      },
+      CreateInputExample: {
+        summary: "Insumo criado",
+        value: {
+          id: 8,
+          name: "Cebola",
+          stockQty: 5,
+          unit: "un",
+        },
+      },
+      UpdateStockSuccessExample: {
+        summary: "Estoque incrementado",
+        value: {
+          id: 1,
+          name: "Pão",
+          stockQty: 12,
+          unit: "un",
         },
       },
     },
@@ -291,6 +437,16 @@ const openApiSpec = {
           ProductInput: { $ref: "#/components/schemas/ProductInputBridge" },
         },
       },
+      InputStock: {
+        type: "object",
+        properties: {
+          id: { type: "integer", example: 1 },
+          name: { type: "string", example: "Pão" },
+          stockQty: { type: "integer", example: 10 },
+          unit: { type: "string", example: "un" },
+        },
+        required: ["id", "name", "stockQty", "unit"],
+      },
       Product: {
         type: "object",
         properties: {
@@ -310,6 +466,35 @@ const openApiSpec = {
           price: { type: "number", example: 32 },
         },
         required: ["name", "price"],
+      },
+      CreateInputPayload: {
+        type: "object",
+        properties: {
+          name: { type: "string", example: "Cebola" },
+          unit: { type: "string", example: "un" },
+          stockQty: { type: "integer", minimum: 0, example: 5 },
+        },
+        required: ["name", "unit"],
+      },
+      UpdateStockPayload: {
+        oneOf: [
+          {
+            type: "object",
+            properties: {
+              delta: { type: "integer", example: 2 },
+            },
+            required: ["delta"],
+            additionalProperties: false,
+          },
+          {
+            type: "object",
+            properties: {
+              stockQty: { type: "integer", minimum: 0, example: 10 },
+            },
+            required: ["stockQty"],
+            additionalProperties: false,
+          },
+        ],
       },
       UpdateProductPayload: {
         type: "object",

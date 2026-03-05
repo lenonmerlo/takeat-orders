@@ -1,8 +1,22 @@
 import { Input } from "../models/index.js";
 
-export async function findInputsByIds(ids, transaction) {
-  return Input.findAll({
-    where: { id: ids },
-    transaction,
-  });
+export async function findAll() {
+  return Input.findAll({ order: [["id", "ASC"]] });
+}
+
+export async function findById(id, transaction) {
+  return Input.findByPk(id, { transaction });
+}
+
+export async function findByName(name) {
+  return Input.findOne({ where: { name } });
+}
+
+export async function createInput(data) {
+  return Input.create(data);
+}
+
+export async function save(input, transaction) {
+  await input.save({ transaction });
+  return input;
 }
