@@ -9,6 +9,20 @@ Projeto do desafio Takeat com backend e frontend separados por pastas.
 - Frontend orientado ao uso operacional do garçom
 - Fila offline com sincronização automática ao reconectar (diferencial)
 
+## Parte 3 — Diferencial (Desafio Extra)
+
+Estratégia implementada para cenário de conexão instável no momento do envio do pedido:
+
+1. Se a requisição falhar por erro de rede, o app não trava e não perde os dados.
+2. O pedido é salvo em fila local no client-side (`localStorage`).
+3. Quando a conexão volta, a fila é processada automaticamente.
+4. Em conflito tardio de estoque na sincronização, o item fica com status de falha e mensagem amigável para o garçom.
+
+Referências:
+
+- Estratégia detalhada: `frontend/README.md`
+- Roteiro de demonstração: `GUIA_BANCA.md`
+
 ## Estrutura do repositório
 
 - `backend/`: API REST (Node.js + Express + Sequelize + PostgreSQL)
