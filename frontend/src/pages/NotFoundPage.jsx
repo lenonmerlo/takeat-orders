@@ -9,10 +9,10 @@ function NotFoundPage() {
           Página não encontrada
         </h2>
         <p className="mb-6 text-2xl text-slate-500">
-          A rota que você tentou acessar não existe neste protótipo.
+          A rota que você tentou acessar não existe.
         </p>
-        <Link to="/" className="tk-btn tk-btn-primary">
-          Voltar para Início
+        <Link to="/products" className="tk-btn tk-btn-primary">
+          Voltar para Produtos
         </Link>
       </div>
     </section>

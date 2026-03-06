@@ -1,3 +1,5 @@
+import { Plus } from "lucide-react";
+
 function getStatusMeta(status) {
   if (status === "low") {
     return {
@@ -29,28 +31,36 @@ function formatPrice(value) {
   }).format(value);
 }
 
-function ProductCard({ product }) {
+function ProductCard({ product, onAdd }) {
   const status = getStatusMeta(product.status);
+  const isDisabled = status.disabled || typeof onAdd !== "function";
 
   return (
     <article className="tk-card">
-      <div className="mb-2 flex items-start justify-between gap-3">
-        <h3 className="text-[1.9rem] font-semibold leading-tight">
+      <div className="mb-2 flex min-w-0 items-start justify-between gap-3">
+        <h3 className="min-w-0 break-words text-[2rem] font-semibold leading-tight">
           {product.name}
         </h3>
-        <span className={status.badgeClass}>{status.label}</span>
+        <span className={`${status.badgeClass} shrink-0 whitespace-nowrap`}>
+          {status.label}
+        </span>
       </div>
 
       <p className="tk-card-description">{product.description}</p>
+      <p className="mb-4 text-base text-slate-500">
+        Receita: {product.recipeSummary || "Sem ficha técnica cadastrada"}
+      </p>
 
       <div className="flex items-center justify-between">
         <span className="tk-price">{formatPrice(product.price)}</span>
         <button
           type="button"
           className="tk-btn tk-btn-primary"
-          disabled={status.disabled}
+          disabled={isDisabled}
+          onClick={() => onAdd?.(product)}
         >
-          ＋ Adicionar
+          <Plus className="mr-1 h-4 w-4" />
+          Adicionar
         </button>
       </div>
     </article>
