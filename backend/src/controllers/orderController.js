@@ -38,7 +38,7 @@ export async function createOrder(req, res, next) {
 
 export async function listOrders(req, res, next) {
   try {
-    const orders = await orderService.listOrders();
+    const orders = await orderService.listOrders(req.query);
     res.json(orders);
   } catch (err) {
     next(err);

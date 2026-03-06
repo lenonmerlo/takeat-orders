@@ -5,6 +5,14 @@ export async function findAll() {
   return Input.findAll({ order: [["id", "ASC"]] });
 }
 
+export async function findAllPaginated({ limit, offset }) {
+  return Input.findAndCountAll({
+    order: [["id", "ASC"]],
+    limit,
+    offset,
+  });
+}
+
 export async function findById(id, transaction) {
   return Input.findByPk(id, { transaction });
 }
