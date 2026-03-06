@@ -877,6 +877,11 @@ const openApiSpec = {
         properties: {
           id: { type: "integer", example: 1 },
           name: { type: "string", example: "X-Burger" },
+          description: {
+            type: "string",
+            nullable: true,
+            example: "Hambúrguer artesanal com queijo derretido e pão brioche.",
+          },
           price: { type: "string", example: "25.00" },
           inputs: {
             type: "array",
@@ -888,6 +893,10 @@ const openApiSpec = {
         type: "object",
         properties: {
           name: { type: "string", example: "X-Bacon" },
+          description: {
+            type: "string",
+            example: "Blend bovino com bacon crocante e molho especial.",
+          },
           price: { type: "number", example: 32 },
         },
         required: ["name", "price"],
@@ -1021,6 +1030,10 @@ const openApiSpec = {
         type: "object",
         properties: {
           name: { type: "string", example: "X-Burger Especial" },
+          description: {
+            type: "string",
+            example: "Hambúrguer com pão selado na manteiga e queijo prato.",
+          },
           price: { type: "number", example: 29.9 },
         },
         minProperties: 1,

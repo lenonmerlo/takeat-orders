@@ -10,7 +10,7 @@ async function bootstrap() {
   try {
     await sequelize.authenticate();
     initModels(sequelize);
-    await sequelize.sync();
+    await sequelize.sync({ alter: true });
 
     app.listen(PORT, () => {
       console.log(`Backend rodando: http://${APP_HOST}:${PORT}`);

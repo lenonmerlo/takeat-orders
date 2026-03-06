@@ -7,6 +7,11 @@ export function initProduct(sequelize) {
     {
       id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
       name: { type: DataTypes.STRING(120), allowNull: false },
+      description: {
+        type: DataTypes.STRING(280),
+        allowNull: true,
+        defaultValue: null,
+      },
       price: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,

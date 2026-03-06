@@ -1,9 +1,9 @@
 import { sequelize } from "../config/database.js";
-import * as productRepo from "../repositories/productRepository.js";
+import { InsufficientStockError } from "../errors/InsufficientStockError.js";
+import { NotFoundError } from "../errors/NotFoundError.js";
 import * as inputRepo from "../repositories/inputRepository.js";
 import * as orderRepo from "../repositories/orderRepository.js";
-import { NotFoundError } from "../errors/NotFoundError.js";
-import { InsufficientStockError } from "../errors/InsufficientStockError.js";
+import * as productRepo from "../repositories/productRepository.js";
 import {
   buildPaginatedResponse,
   parsePagination,
@@ -55,6 +55,44 @@ function calculateOrderTotal(items) {
   return items.reduce((acc, item) => acc + item.lineTotal, 0);
 }
 
+async function restoreStockForOrder(order, transaction) {
+  const orderItems = Array.isArray(order.items) ? order.items : [];
+
+  if (!orderItems.length) return;
+
+  const normalizedItems = orderItems.map((item) => ({
+    productId: Number(item.productId),
+    quantity: Number(item.qty ?? item.quantity ?? 0),
+  }));
+
+  const productIds = [
+    ...new Set(normalizedItems.map((item) => item.productId)),
+  ];
+  const products = await productRepo.findByIdsWithRecipe(
+    productIds,
+    transaction,
+  );
+
+  const consumptionMap = buildInputConsumptionMap(products, normalizedItems);
+  const inputIds = [...consumptionMap.keys()];
+
+  if (!inputIds.length) return;
+
+  const lockedInputs = await inputRepo.findByIdsForUpdate(
+    inputIds,
+    transaction,
+  );
+  const inputById = new Map(lockedInputs.map((input) => [input.id, input]));
+
+  for (const consumption of consumptionMap.values()) {
+    const inputModel = inputById.get(consumption.inputId);
+    if (!inputModel) continue;
+
+    inputModel.stockQty = Number(inputModel.stockQty) + consumption.required;
+    await inputModel.save({ transaction });
+  }
+}
+
 export async function createOrder(payload) {
   return sequelize.transaction(async (transaction) => {
     const existingOrder = await orderRepo.findByClientRequestId(
@@ -70,8 +108,13 @@ export async function createOrder(payload) {
       return { ...hydrated.toJSON(), reused: true };
     }
 
-    const productIds = [...new Set(payload.items.map((item) => item.productId))];
-    const products = await productRepo.findByIdsWithRecipe(productIds, transaction);
+    const productIds = [
+      ...new Set(payload.items.map((item) => item.productId)),
+    ];
+    const products = await productRepo.findByIdsWithRecipe(
+      productIds,
+      transaction,
+    );
 
     if (products.length !== productIds.length) {
       const foundIds = new Set(products.map((p) => p.id));
@@ -84,7 +127,10 @@ export async function createOrder(payload) {
 
     const consumptionMap = buildInputConsumptionMap(products, payload.items);
     const inputIds = [...consumptionMap.keys()];
-    const lockedInputs = await inputRepo.findByIdsForUpdate(inputIds, transaction);
+    const lockedInputs = await inputRepo.findByIdsForUpdate(
+      inputIds,
+      transaction,
+    );
 
     const stockMap = new Map(
       lockedInputs.map((input) => [
@@ -118,7 +164,8 @@ export async function createOrder(payload) {
 
     for (const consumption of consumptionMap.values()) {
       const stockEntry = stockMap.get(consumption.inputId);
-      stockEntry.model.stockQty = stockEntry.model.stockQty - consumption.required;
+      stockEntry.model.stockQty =
+        stockEntry.model.stockQty - consumption.required;
       await stockEntry.model.save({ transaction });
     }
 
@@ -184,19 +231,25 @@ export async function getOrderById(id) {
 }
 
 export async function updateOrderStatus(id, payload) {
-  const order = await orderRepo.findByIdWithItems(id);
+  return sequelize.transaction(async (transaction) => {
+    const order = await orderRepo.findByIdWithItems(id, transaction);
 
-  if (!order) {
-    throw new NotFoundError("Pedido não encontrado");
-  }
+    if (!order) {
+      throw new NotFoundError("Pedido não encontrado");
+    }
 
-  if (order.status === payload.status) {
-    return order;
-  }
+    if (order.status === payload.status) {
+      return order;
+    }
 
-  order.status = payload.status;
+    if (order.status === "CREATED" && payload.status === "CANCELED") {
+      await restoreStockForOrder(order, transaction);
+    }
 
-  await orderRepo.saveOrder(order);
+    order.status = payload.status;
 
-  return orderRepo.findByIdWithItems(id);
+    await orderRepo.saveOrder(order, transaction);
+
+    return orderRepo.findByIdWithItems(id, transaction);
+  });
 }
