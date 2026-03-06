@@ -10,6 +10,18 @@ export async function findAllWithRecipe() {
   });
 }
 
+export async function findAllWithRecipePaginated({ limit, offset }) {
+  return Product.findAndCountAll({
+    include: [
+      { model: Input, as: "inputs", through: { attributes: ["qtyRequired"] } },
+    ],
+    order: [["id", "ASC"]],
+    limit,
+    offset,
+    distinct: true,
+  });
+}
+
 export async function findByIdWithRecipe(id) {
   return Product.findByPk(id, {
     include: [

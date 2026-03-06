@@ -44,6 +44,28 @@ export async function findAllWithItems() {
   });
 }
 
+export async function findAllWithItemsPaginated({ limit, offset }) {
+  return Order.findAndCountAll({
+    include: [
+      {
+        model: OrderItem,
+        as: "items",
+        include: [
+          {
+            model: Product,
+            as: "product",
+            attributes: ["id", "name", "price"],
+          },
+        ],
+      },
+    ],
+    order: [["id", "DESC"]],
+    limit,
+    offset,
+    distinct: true,
+  });
+}
+
 export async function findByIdWithItems(id, transaction) {
   return Order.findByPk(id, {
     include: [

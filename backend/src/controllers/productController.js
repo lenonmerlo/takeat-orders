@@ -7,7 +7,7 @@ import {
 
 export async function listProducts(req, res, next) {
   try {
-    const products = await productService.listProducts();
+    const products = await productService.listProducts(req.query);
     res.json(products);
   } catch (error) {
     next(error);

@@ -4,6 +4,10 @@ import * as inputRepo from "../repositories/inputRepository.js";
 import * as orderRepo from "../repositories/orderRepository.js";
 import { NotFoundError } from "../errors/NotFoundError.js";
 import { InsufficientStockError } from "../errors/InsufficientStockError.js";
+import {
+  buildPaginatedResponse,
+  parsePagination,
+} from "../utils/pagination.js";
 
 function buildInputConsumptionMap(products, orderItems) {
   const consumptionMap = new Map();
@@ -158,8 +162,15 @@ export async function createOrder(payload) {
   });
 }
 
-export async function listOrders() {
-  return orderRepo.findAllWithItems();
+export async function listOrders(query) {
+  const pagination = parsePagination(query);
+  const result = await orderRepo.findAllWithItemsPaginated(pagination);
+  return buildPaginatedResponse({
+    rows: result.rows,
+    count: result.count,
+    page: pagination.page,
+    limit: pagination.limit,
+  });
 }
 
 export async function getOrderById(id) {

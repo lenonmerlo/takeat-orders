@@ -2,9 +2,20 @@ import { sequelize } from "../config/database.js";
 import { NotFoundError } from "../errors/NotFoundError.js";
 import * as inputRepo from "../repositories/inputRepository.js";
 import * as productRepo from "../repositories/productRepository.js";
+import {
+  buildPaginatedResponse,
+  parsePagination,
+} from "../utils/pagination.js";
 
-export async function listProducts() {
-  return productRepo.findAllWithRecipe();
+export async function listProducts(query) {
+  const pagination = parsePagination(query);
+  const result = await productRepo.findAllWithRecipePaginated(pagination);
+  return buildPaginatedResponse({
+    rows: result.rows,
+    count: result.count,
+    page: pagination.page,
+    limit: pagination.limit,
+  });
 }
 
 export async function getProductById(id) {

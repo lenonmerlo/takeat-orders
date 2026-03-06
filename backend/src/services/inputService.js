@@ -1,9 +1,20 @@
 import { NotFoundError } from "../errors/NotFoundError.js";
 import { ValidationError } from "../errors/ValidationError.js";
 import * as inputRepo from "../repositories/inputRepository.js";
+import {
+  buildPaginatedResponse,
+  parsePagination,
+} from "../utils/pagination.js";
 
-export async function listInputs() {
-  return inputRepo.findAll();
+export async function listInputs(query) {
+  const pagination = parsePagination(query);
+  const result = await inputRepo.findAllPaginated(pagination);
+  return buildPaginatedResponse({
+    rows: result.rows,
+    count: result.count,
+    page: pagination.page,
+    limit: pagination.limit,
+  });
 }
 
 export async function createInput(payload) {

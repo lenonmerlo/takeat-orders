@@ -6,7 +6,7 @@ import {
 
 export async function listInputs(req, res, next) {
   try {
-    const inputs = await inputService.listInputs();
+    const inputs = await inputService.listInputs(req.query);
     res.json(inputs);
   } catch (error) {
     next(error);

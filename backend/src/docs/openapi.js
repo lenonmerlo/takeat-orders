@@ -32,13 +32,28 @@ const openApiSpec = {
                   type: "object",
                   properties: {
                     status: { type: "string", example: "ok" },
+                    db: { type: "string", example: "up" },
                   },
-                  required: ["status"],
+                  required: ["status", "db"],
                 },
               },
             },
           },
-          500: { $ref: "#/components/responses/InternalErrorResponse" },
+          503: {
+            description: "API degradada (banco indisponível)",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    status: { type: "string", example: "degraded" },
+                    db: { type: "string", example: "down" },
+                  },
+                  required: ["status", "db"],
+                },
+              },
+            },
+          },
         },
       },
     },
@@ -46,18 +61,32 @@ const openApiSpec = {
       get: {
         tags: ["Products"],
         summary: "Lista produtos com ficha técnica",
+        parameters: [
+          {
+            name: "page",
+            in: "query",
+            required: false,
+            schema: { type: "integer", minimum: 1, default: 1 },
+          },
+          {
+            name: "limit",
+            in: "query",
+            required: false,
+            schema: { type: "integer", minimum: 1, maximum: 100, default: 10 },
+          },
+        ],
         responses: {
           200: {
             description: "Lista de produtos",
             content: {
               "application/json": {
                 schema: {
-                  type: "array",
-                  items: { $ref: "#/components/schemas/Product" },
+                  $ref: "#/components/schemas/PaginatedProductsResponse",
                 },
               },
             },
           },
+          400: { $ref: "#/components/responses/ValidationErrorResponse" },
           500: { $ref: "#/components/responses/InternalErrorResponse" },
         },
       },
@@ -184,14 +213,27 @@ const openApiSpec = {
       get: {
         tags: ["Inputs"],
         summary: "Lista insumos",
+        parameters: [
+          {
+            name: "page",
+            in: "query",
+            required: false,
+            schema: { type: "integer", minimum: 1, default: 1 },
+          },
+          {
+            name: "limit",
+            in: "query",
+            required: false,
+            schema: { type: "integer", minimum: 1, maximum: 100, default: 10 },
+          },
+        ],
         responses: {
           200: {
             description: "Lista de insumos",
             content: {
               "application/json": {
                 schema: {
-                  type: "array",
-                  items: { $ref: "#/components/schemas/InputStock" },
+                  $ref: "#/components/schemas/PaginatedInputsResponse",
                 },
                 examples: {
                   success: { $ref: "#/components/examples/ListInputsExample" },
@@ -199,6 +241,7 @@ const openApiSpec = {
               },
             },
           },
+          400: { $ref: "#/components/responses/ValidationErrorResponse" },
           500: { $ref: "#/components/responses/InternalErrorResponse" },
         },
       },
@@ -274,14 +317,27 @@ const openApiSpec = {
       get: {
         tags: ["Orders"],
         summary: "Lista pedidos com itens",
+        parameters: [
+          {
+            name: "page",
+            in: "query",
+            required: false,
+            schema: { type: "integer", minimum: 1, default: 1 },
+          },
+          {
+            name: "limit",
+            in: "query",
+            required: false,
+            schema: { type: "integer", minimum: 1, maximum: 100, default: 10 },
+          },
+        ],
         responses: {
           200: {
             description: "Lista de pedidos",
             content: {
               "application/json": {
                 schema: {
-                  type: "array",
-                  items: { $ref: "#/components/schemas/OrderResponse" },
+                  $ref: "#/components/schemas/PaginatedOrdersResponse",
                 },
                 examples: {
                   success: { $ref: "#/components/examples/OrderListExample" },
@@ -289,6 +345,7 @@ const openApiSpec = {
               },
             },
           },
+          400: { $ref: "#/components/responses/ValidationErrorResponse" },
           500: { $ref: "#/components/responses/InternalErrorResponse" },
         },
       },
@@ -367,7 +424,9 @@ const openApiSpec = {
               "application/json": {
                 schema: { $ref: "#/components/schemas/OrderResponse" },
                 examples: {
-                  success: { $ref: "#/components/examples/OrderCreatedExample" },
+                  success: {
+                    $ref: "#/components/examples/OrderCreatedExample",
+                  },
                 },
               },
             },
@@ -591,20 +650,30 @@ const openApiSpec = {
       },
       ListInputsExample: {
         summary: "Lista de insumos",
-        value: [
-          {
-            id: 1,
-            name: "Pão",
-            stockQty: 10,
-            unit: "un",
+        value: {
+          data: [
+            {
+              id: 1,
+              name: "Pão",
+              stockQty: 10,
+              unit: "un",
+            },
+            {
+              id: 2,
+              name: "Carne",
+              stockQty: 5,
+              unit: "un",
+            },
+          ],
+          meta: {
+            page: 1,
+            limit: 10,
+            total: 2,
+            totalPages: 1,
+            hasNext: false,
+            hasPrev: false,
           },
-          {
-            id: 2,
-            name: "Carne",
-            stockQty: 5,
-            unit: "un",
-          },
-        ],
+        },
       },
       CreateInputExample: {
         summary: "Insumo criado",
@@ -700,17 +769,27 @@ const openApiSpec = {
       },
       OrderListExample: {
         summary: "Lista de pedidos",
-        value: [
-          {
-            id: 2,
-            clientRequestId: "ord-002",
-            status: "CREATED",
-            total: "25.00",
-            createdAt: "2026-03-06T14:50:00.000Z",
-            updatedAt: "2026-03-06T14:50:00.000Z",
-            items: [],
+        value: {
+          data: [
+            {
+              id: 2,
+              clientRequestId: "ord-002",
+              status: "CREATED",
+              total: "25.00",
+              createdAt: "2026-03-06T14:50:00.000Z",
+              updatedAt: "2026-03-06T14:50:00.000Z",
+              items: [],
+            },
+          ],
+          meta: {
+            page: 1,
+            limit: 10,
+            total: 1,
+            totalPages: 1,
+            hasNext: false,
+            hasPrev: false,
           },
-        ],
+        },
       },
       OrderStatusUpdatedExample: {
         summary: "Pedido cancelado",
@@ -751,6 +830,47 @@ const openApiSpec = {
           unit: { type: "string", example: "un" },
         },
         required: ["id", "name", "stockQty", "unit"],
+      },
+      PaginationMeta: {
+        type: "object",
+        properties: {
+          page: { type: "integer", example: 1 },
+          limit: { type: "integer", example: 10 },
+          total: { type: "integer", example: 25 },
+          totalPages: { type: "integer", example: 3 },
+          hasNext: { type: "boolean", example: true },
+          hasPrev: { type: "boolean", example: false },
+        },
+        required: [
+          "page",
+          "limit",
+          "total",
+          "totalPages",
+          "hasNext",
+          "hasPrev",
+        ],
+      },
+      PaginatedProductsResponse: {
+        type: "object",
+        properties: {
+          data: {
+            type: "array",
+            items: { $ref: "#/components/schemas/Product" },
+          },
+          meta: { $ref: "#/components/schemas/PaginationMeta" },
+        },
+        required: ["data", "meta"],
+      },
+      PaginatedInputsResponse: {
+        type: "object",
+        properties: {
+          data: {
+            type: "array",
+            items: { $ref: "#/components/schemas/InputStock" },
+          },
+          meta: { $ref: "#/components/schemas/PaginationMeta" },
+        },
+        required: ["data", "meta"],
       },
       Product: {
         type: "object",
@@ -885,6 +1005,17 @@ const openApiSpec = {
           reused: { type: "boolean", example: false },
         },
         required: ["id", "clientRequestId", "status", "total", "items"],
+      },
+      PaginatedOrdersResponse: {
+        type: "object",
+        properties: {
+          data: {
+            type: "array",
+            items: { $ref: "#/components/schemas/OrderResponse" },
+          },
+          meta: { $ref: "#/components/schemas/PaginationMeta" },
+        },
+        required: ["data", "meta"],
       },
       UpdateProductPayload: {
         type: "object",
