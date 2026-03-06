@@ -46,6 +46,8 @@ DB_PASSWORD=SUA_SENHA_FORTE
 >
 > **Nota de segurança:** não versionar credenciais reais no repositório. Para avaliação, use valores de ambiente locais (`.env` não commitado) ou arquivo de exemplo (`.env.example`) com placeholders.
 
+Arquivo de referência: `backend/.env.example`.
+
 ## Executando com Docker
 
 Na raiz do projeto:
@@ -74,6 +76,15 @@ npm run dev
 - `npm run migrate:sql -- <arquivo.sql>`: executor SQL genérico
 - `npm run migrate:idempotency:up`: aplica NOT NULL em `orders.client_request_id`
 - `npm run migrate:idempotency:down`: rollback do NOT NULL
+- `npm test`: executa testes críticos de pedidos
+
+## Testes automatizados (críticos)
+
+Os testes de integração em `tests/integration/orders.critical.test.js` cobrem:
+
+- idempotência com `clientRequestId`
+- garantia transacional de estoque em falha por insuficiência
+- restauração de estoque ao cancelar pedido (`CREATED -> CANCELED`)
 
 ## Endpoints principais
 
