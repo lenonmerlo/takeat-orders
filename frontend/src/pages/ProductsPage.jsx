@@ -1,15 +1,16 @@
 import { useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import OrderSummaryPanel from "../components/cart/OrderSummaryPanel";
+import OrderQueuePanel from "../components/orders/OrderQueuePanel";
 import ProductGrid from "../components/product/ProductGrid";
 import OrderErrorModal from "../components/shared/OrderErrorModal";
 import SearchBar from "../components/shared/SearchBar";
 import { useCart } from "../hooks/useCart";
-import {
-  formatInsufficientStockMessage,
-  useCreateOrder,
-} from "../hooks/useCreateOrder";
+import { useCreateOrder } from "../hooks/useCreateOrder";
+import { useOrderQueue } from "../hooks/useOrderQueue";
 import { useProducts } from "../hooks/useProducts";
+import { toCreateOrderPayload } from "../utils/order";
+import { formatInsufficientStockMessage } from "../utils/orderErrors";
 
 function ProductsPage() {
   const {
@@ -22,6 +23,7 @@ function ProductsPage() {
   } = useProducts();
   const cart = useCart();
   const orderCreation = useCreateOrder();
+  const orderQueue = useOrderQueue();
   const cartPanelRef = useRef(null);
 
   const productsById = useMemo(
@@ -125,8 +127,34 @@ function ProductsPage() {
   };
 
   const handleSubmitOrder = async () => {
-    const order = await orderCreation.submitOrder(cart.items);
+    if (!Array.isArray(cart.items) || cart.items.length === 0) return;
+
+    const payload = toCreateOrderPayload(cart.items);
+    const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
+
+    if (isOffline) {
+      orderQueue.enqueueOrder(payload);
+      orderCreation.setErrorMessage("");
+      orderCreation.setResultMessage(
+        "Sem internet agora. Pedido guardado na fila e será enviado automaticamente.",
+      );
+      cart.clear();
+      return;
+    }
+
+    const { order, errorType } = await orderCreation.submitOrder(cart.items);
+
     if (order) {
+      cart.clear();
+      return;
+    }
+
+    if (errorType === "network") {
+      orderQueue.enqueueOrder(payload);
+      orderCreation.setErrorMessage("");
+      orderCreation.setResultMessage(
+        "Conexão instável. Pedido guardado na fila e será reenviado quando a internet voltar.",
+      );
       cart.clear();
     }
   };
@@ -152,9 +180,12 @@ function ProductsPage() {
         <div>
           <SearchBar value={query} onChange={setQuery} />
 
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <h2 className="tk-section-title mb-0">Produtos</h2>
-            <Link to="/orders" className="tk-btn tk-btn-ghost">
+            <Link
+              to="/orders"
+              className="tk-btn tk-btn-ghost px-3 py-1.5 text-sm md:text-base"
+            >
               Ver pedidos
             </Link>
           </div>
@@ -188,6 +219,14 @@ function ProductsPage() {
               </p>
             </div>
           ) : null}
+
+          <OrderQueuePanel
+            queueItems={orderQueue.queueItems}
+            isSyncing={orderQueue.isSyncing}
+            onSync={orderQueue.syncQueue}
+            onDismiss={orderQueue.dismissQueueItem}
+            onClearSynced={orderQueue.clearSynced}
+          />
         </div>
 
         <aside

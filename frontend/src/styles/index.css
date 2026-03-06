@@ -55,7 +55,7 @@
 
 @layer components {
   .tk-container {
-    @apply mx-auto w-full max-w-[1500px] px-6;
+    @apply mx-auto w-full max-w-[1500px] px-4 md:px-6;
   }
 
   .tk-topbar {
@@ -71,11 +71,11 @@
   }
 
   .tk-title {
-    @apply text-[1.7rem] font-semibold tracking-tight;
+    @apply text-[1.45rem] font-semibold tracking-tight md:text-[1.7rem];
   }
 
   .tk-subtitle {
-    @apply text-sm text-gray-500;
+    @apply text-xs text-gray-500 md:text-sm;
   }
 
   .tk-surface {
@@ -90,7 +90,7 @@
     border-radius: var(--tk-radius-lg);
     background: var(--tk-surface);
     box-shadow: var(--tk-shadow-sm);
-    @apply p-6;
+    @apply p-4 md:p-6;
   }
 
   .tk-home-hero {
@@ -138,11 +138,11 @@
   }
 
   .tk-section-title {
-    @apply mb-4 text-[1.9rem] font-semibold text-gray-900;
+    @apply mb-4 text-[1.55rem] font-semibold text-gray-900 md:text-[1.9rem];
   }
 
   .tk-search {
-    @apply flex items-center gap-2 rounded-xl border border-solid bg-white px-4 py-3 text-base text-gray-700 outline-none;
+    @apply flex items-center gap-2 rounded-xl border border-solid bg-white px-3 py-2.5 text-sm text-gray-700 outline-none md:px-4 md:py-3 md:text-base;
   }
 
   .tk-search:focus-within {
@@ -155,23 +155,23 @@
     border-radius: var(--tk-radius-lg);
     background: var(--tk-surface);
     box-shadow: var(--tk-shadow-sm);
-    @apply p-5;
+    @apply p-4 md:p-5;
   }
 
   .tk-card-title {
-    @apply mb-1 text-[2rem] font-semibold leading-tight;
+    @apply mb-1 text-[1.75rem] font-semibold leading-tight md:text-[2rem];
   }
 
   .tk-card-description {
-    @apply mb-4 text-[1.45rem] leading-snug text-gray-600;
+    @apply mb-3 text-[1.2rem] leading-snug text-gray-600 md:mb-4 md:text-[1.35rem];
   }
 
   .tk-price {
-    @apply text-[2.05rem] font-semibold tracking-tight;
+    @apply text-[1.6rem] font-semibold tracking-tight md:text-[2.05rem];
   }
 
   .tk-badge {
-    @apply inline-flex items-center rounded-md border border-solid px-2.5 py-0.5 text-xs font-medium;
+    @apply inline-flex items-center rounded-md border border-solid px-2 py-0.5 text-[11px] font-medium md:px-2.5 md:text-xs;
   }
 
   .tk-badge-available {
@@ -193,7 +193,7 @@
   }
 
   .tk-btn {
-    @apply inline-flex items-center justify-center rounded-lg border border-solid px-4 py-2 text-[1rem] font-semibold transition-colors duration-150;
+    @apply inline-flex items-center justify-center rounded-lg border border-solid px-3 py-2 text-[0.92rem] font-semibold transition-colors duration-150 md:px-4 md:text-[1rem];
   }
 
   .tk-btn-primary {
@@ -228,24 +228,24 @@
   }
 
   .tk-counter {
-    @apply inline-flex items-center gap-3;
+    @apply inline-flex items-center gap-2 md:gap-3;
   }
 
   .tk-counter-btn {
-    @apply flex h-9 w-9 items-center justify-center rounded-md border border-solid bg-white text-lg leading-none;
+    @apply flex h-8 w-8 items-center justify-center rounded-md border border-solid bg-white text-lg leading-none md:h-9 md:w-9;
   }
 
   .tk-total-row {
-    @apply flex items-center justify-between text-[1.2rem] text-gray-500;
+    @apply flex items-center justify-between text-[1rem] text-gray-500 md:text-[1.2rem];
   }
 
   .tk-total-final {
-    @apply flex items-center justify-between text-[2rem] font-semibold;
+    @apply flex items-center justify-between text-[1.6rem] font-semibold md:text-[2rem];
     color: var(--tk-primary);
   }
 
   .tk-alert {
-    @apply rounded-xl border border-solid p-5;
+    @apply rounded-xl border border-solid p-4 md:p-5;
   }
 
   .tk-alert-danger {

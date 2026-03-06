@@ -37,8 +37,8 @@ function ProductCard({ product, onAdd }) {
 
   return (
     <article className="tk-card">
-      <div className="mb-2 flex min-w-0 items-start justify-between gap-3">
-        <h3 className="min-w-0 break-words text-[2rem] font-semibold leading-tight">
+      <div className="mb-2 flex min-w-0 items-start justify-between gap-2 md:gap-3">
+        <h3 className="min-w-0 break-words text-[1.7rem] font-semibold leading-tight md:text-[2rem]">
           {product.name}
         </h3>
         <span className={`${status.badgeClass} shrink-0 whitespace-nowrap`}>
@@ -51,11 +51,11 @@ function ProductCard({ product, onAdd }) {
         Receita: {product.recipeSummary || "Sem ficha técnica cadastrada"}
       </p>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <span className="tk-price">{formatPrice(product.price)}</span>
         <button
           type="button"
-          className="tk-btn tk-btn-primary"
+          className="tk-btn tk-btn-primary px-3 py-2 text-sm md:text-base"
           disabled={isDisabled}
           onClick={() => onAdd?.(product)}
         >
