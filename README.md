@@ -33,6 +33,7 @@ Referências:
 - Backend: `backend/README.md`
 - Frontend: `frontend/README.md`
 - Roteiro de demonstração para banca: `GUIA_BANCA.md`
+- Diagrama de arquitetura: `docs/architecture-diagram.png`
 
 ## Execução rápida (Docker)
 
