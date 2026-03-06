@@ -1,3 +1,4 @@
+import { Op } from "sequelize";
 import { Input, Product, ProductInput } from "../models/index.js";
 
 export async function findAllWithRecipe() {
@@ -39,4 +40,18 @@ export async function replaceRecipe({ productId, recipeItems, transaction }) {
       { transaction },
     );
   }
+}
+
+export async function findByIdsWithRecipe(ids, transaction) {
+  return Product.findAll({
+    where: { id: { [Op.in]: ids } },
+    include: [
+      {
+        model: Input,
+        as: "inputs",
+        through: { attributes: ["qtyRequired"] },
+      },
+    ],
+    transaction,
+  });
 }
