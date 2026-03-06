@@ -1,24 +1,7 @@
 import { useState } from "react";
 import { createOrder } from "../services/ordersService";
 import { toCreateOrderPayload } from "../utils/order";
-
-export function formatInsufficientStockMessage(details) {
-  if (!Array.isArray(details) || details.length === 0) {
-    return "Faltam insumos para concluir este pedido agora. Tente ajustar as quantidades.";
-  }
-
-  const lines = details
-    .map((item) => {
-      const name = item?.name || `Insumo #${item?.inputId ?? "?"}`;
-      const required = Number(item?.required ?? 0);
-      const available = Number(item?.available ?? 0);
-
-      return `• ${name}: precisa ${required} e tem ${available}.`;
-    })
-    .join("\n");
-
-  return `Faltam insumos para concluir este pedido agora.\n\nConfira o que está em falta:\n${lines}`;
-}
+import { isNetworkError, mapOrderApiErrorToMessage } from "../utils/orderErrors";
 
 export function useCreateOrder() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,7 +9,9 @@ export function useCreateOrder() {
   const [errorMessage, setErrorMessage] = useState("");
 
   const submitOrder = async (cartItems) => {
-    if (!Array.isArray(cartItems) || cartItems.length === 0) return null;
+    if (!Array.isArray(cartItems) || cartItems.length === 0) {
+      return { order: null, error: null, errorType: null };
+    }
 
     setIsSubmitting(true);
     setResultMessage("");
@@ -42,23 +27,14 @@ export function useCreateOrder() {
         setResultMessage(`Pedido #${order.id} criado com sucesso.`);
       }
 
-      return order;
+      return { order, error: null, errorType: null };
     } catch (error) {
-      if (error?.status === 409) {
-        setErrorMessage(formatInsufficientStockMessage(error?.details));
-      } else if (error?.status === 404) {
-        setErrorMessage(
-          error.message || "Um ou mais produtos do pedido não existem.",
-        );
-      } else if (error?.status === 400) {
-        setErrorMessage(
-          error.message ||
-            "Pedido inválido. Verifique os itens e tente novamente.",
-        );
-      } else {
-        setErrorMessage(error?.message || "Falha ao criar pedido.");
+      if (isNetworkError(error)) {
+        return { order: null, error, errorType: "network" };
       }
-      return null;
+
+      setErrorMessage(mapOrderApiErrorToMessage(error));
+      return { order: null, error, errorType: "api" };
     } finally {
       setIsSubmitting(false);
     }
