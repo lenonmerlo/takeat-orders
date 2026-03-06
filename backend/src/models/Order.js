@@ -8,7 +8,7 @@ export function initOrder(sequelize) {
       id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
       clientRequestId: {
         type: DataTypes.STRING(80),
-        allowNull: true,
+        allowNull: false,
         unique: true,
         field: "client_request_id",
       },
