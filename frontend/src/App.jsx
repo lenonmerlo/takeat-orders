@@ -1,9 +1,7 @@
+import AppRouter from "./routes/AppRouter";
+
 function App() {
-  return (
-    <div>
-      <h1>Takeat Orders</h1>
-    </div>
-  );
+  return <AppRouter />;
 }
 
 export default App;
