@@ -15,6 +15,7 @@ const openApiSpec = {
   tags: [
     { name: "Health", description: "Status da API" },
     { name: "Inputs", description: "Operações de insumos" },
+    { name: "Orders", description: "Operações de pedidos" },
     { name: "Products", description: "Operações de produtos" },
   ],
   paths: {
@@ -269,6 +270,154 @@ const openApiSpec = {
         },
       },
     },
+    "/api/orders": {
+      get: {
+        tags: ["Orders"],
+        summary: "Lista pedidos com itens",
+        responses: {
+          200: {
+            description: "Lista de pedidos",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "array",
+                  items: { $ref: "#/components/schemas/OrderResponse" },
+                },
+                examples: {
+                  success: { $ref: "#/components/examples/OrderListExample" },
+                },
+              },
+            },
+          },
+          500: { $ref: "#/components/responses/InternalErrorResponse" },
+        },
+      },
+      post: {
+        tags: ["Orders"],
+        summary: "Cria pedido com validação atômica de estoque",
+        parameters: [
+          {
+            name: "Idempotency-Key",
+            in: "header",
+            required: false,
+            schema: {
+              type: "string",
+              maxLength: 80,
+            },
+            description:
+              "Chave idempotente opcional no header. Se não enviada, clientRequestId no body é obrigatório.",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/CreateOrderPayload" },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: "Pedido criado",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/OrderResponse" },
+                examples: {
+                  created: {
+                    $ref: "#/components/examples/OrderCreatedExample",
+                  },
+                },
+              },
+            },
+          },
+          200: {
+            description: "Replay idempotente",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/OrderResponse" },
+                examples: {
+                  replay: { $ref: "#/components/examples/OrderReplayExample" },
+                },
+              },
+            },
+          },
+          400: { $ref: "#/components/responses/ValidationErrorResponse" },
+          404: { $ref: "#/components/responses/OrderProductsNotFoundResponse" },
+          409: { $ref: "#/components/responses/InsufficientStockResponse" },
+          500: { $ref: "#/components/responses/InternalErrorResponse" },
+        },
+      },
+    },
+    "/api/orders/{id}": {
+      get: {
+        tags: ["Orders"],
+        summary: "Busca pedido por id",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer", minimum: 1 },
+          },
+        ],
+        responses: {
+          200: {
+            description: "Pedido encontrado",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/OrderResponse" },
+                examples: {
+                  success: { $ref: "#/components/examples/OrderCreatedExample" },
+                },
+              },
+            },
+          },
+          400: { $ref: "#/components/responses/ValidationErrorResponse" },
+          404: { $ref: "#/components/responses/OrderNotFoundResponse" },
+          500: { $ref: "#/components/responses/InternalErrorResponse" },
+        },
+      },
+    },
+    "/api/orders/{id}/status": {
+      patch: {
+        tags: ["Orders"],
+        summary: "Atualiza status do pedido",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer", minimum: 1 },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UpdateOrderStatusPayload" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Status atualizado",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/OrderResponse" },
+                examples: {
+                  canceled: {
+                    $ref: "#/components/examples/OrderStatusUpdatedExample",
+                  },
+                },
+              },
+            },
+          },
+          400: { $ref: "#/components/responses/ValidationErrorResponse" },
+          404: { $ref: "#/components/responses/OrderNotFoundResponse" },
+          500: { $ref: "#/components/responses/InternalErrorResponse" },
+        },
+      },
+    },
   },
   components: {
     responses: {
@@ -306,6 +455,45 @@ const openApiSpec = {
             examples: {
               inputNotFound: {
                 $ref: "#/components/examples/InputNotFoundExample",
+              },
+            },
+          },
+        },
+      },
+      OrderProductsNotFoundResponse: {
+        description: "Um ou mais produtos não existem",
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/ErrorResponse" },
+            examples: {
+              missingProducts: {
+                $ref: "#/components/examples/OrderProductsNotFoundExample",
+              },
+            },
+          },
+        },
+      },
+      OrderNotFoundResponse: {
+        description: "Pedido não encontrado",
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/ErrorResponse" },
+            examples: {
+              orderNotFound: {
+                $ref: "#/components/examples/OrderNotFoundExample",
+              },
+            },
+          },
+        },
+      },
+      InsufficientStockResponse: {
+        description: "Estoque insuficiente para finalizar o pedido",
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/ErrorResponse" },
+            examples: {
+              insufficientStock: {
+                $ref: "#/components/examples/InsufficientStockExample",
               },
             },
           },
@@ -367,6 +555,23 @@ const openApiSpec = {
           message: "Insumo não encontrado",
         },
       },
+      OrderProductsNotFoundExample: {
+        summary: "Produtos inexistentes no pedido",
+        value: {
+          error: "NOT_FOUND",
+          message: "Um ou mais produtos não existem",
+          details: {
+            missingProductIds: [99],
+          },
+        },
+      },
+      OrderNotFoundExample: {
+        summary: "Pedido inexistente",
+        value: {
+          error: "NOT_FOUND",
+          message: "Pedido não encontrado",
+        },
+      },
       MissingInputsExample: {
         summary: "Insumos inexistentes",
         value: {
@@ -417,6 +622,106 @@ const openApiSpec = {
           name: "Pão",
           stockQty: 12,
           unit: "un",
+        },
+      },
+      InsufficientStockExample: {
+        summary: "Estoque insuficiente",
+        value: {
+          error: "INSUFFICIENT_STOCK",
+          message: "Estoque insuficiente para finalizar o pedido",
+          details: [
+            {
+              inputId: 2,
+              name: "Carne",
+              unit: "un",
+              required: 20,
+              available: 5,
+            },
+          ],
+        },
+      },
+      OrderCreatedExample: {
+        summary: "Pedido criado",
+        value: {
+          id: 1,
+          clientRequestId: "ord-001",
+          status: "CREATED",
+          total: "50.00",
+          createdAt: "2026-03-06T14:42:12.242Z",
+          updatedAt: "2026-03-06T14:42:12.242Z",
+          items: [
+            {
+              id: 1,
+              orderId: 1,
+              productId: 1,
+              qty: 2,
+              unitPrice: "25.00",
+              lineTotal: "50.00",
+              order_id: 1,
+              product_id: 1,
+              product: {
+                id: 1,
+                name: "X-Burger",
+                price: "25.00",
+              },
+            },
+          ],
+          reused: false,
+        },
+      },
+      OrderReplayExample: {
+        summary: "Replay idempotente",
+        value: {
+          id: 1,
+          clientRequestId: "ord-001",
+          status: "CREATED",
+          total: "50.00",
+          createdAt: "2026-03-06T14:42:12.242Z",
+          updatedAt: "2026-03-06T14:42:12.242Z",
+          items: [
+            {
+              id: 1,
+              orderId: 1,
+              productId: 1,
+              qty: 2,
+              unitPrice: "25.00",
+              lineTotal: "50.00",
+              order_id: 1,
+              product_id: 1,
+              product: {
+                id: 1,
+                name: "X-Burger",
+                price: "25.00",
+              },
+            },
+          ],
+          reused: true,
+        },
+      },
+      OrderListExample: {
+        summary: "Lista de pedidos",
+        value: [
+          {
+            id: 2,
+            clientRequestId: "ord-002",
+            status: "CREATED",
+            total: "25.00",
+            createdAt: "2026-03-06T14:50:00.000Z",
+            updatedAt: "2026-03-06T14:50:00.000Z",
+            items: [],
+          },
+        ],
+      },
+      OrderStatusUpdatedExample: {
+        summary: "Pedido cancelado",
+        value: {
+          id: 1,
+          clientRequestId: "ord-001",
+          status: "CANCELED",
+          total: "50.00",
+          createdAt: "2026-03-06T14:42:12.242Z",
+          updatedAt: "2026-03-06T14:55:10.000Z",
+          items: [],
         },
       },
     },
@@ -495,6 +800,91 @@ const openApiSpec = {
             additionalProperties: false,
           },
         ],
+      },
+      CreateOrderItemPayload: {
+        type: "object",
+        properties: {
+          productId: { type: "integer", minimum: 1, example: 1 },
+          quantity: { type: "integer", minimum: 1, example: 2 },
+        },
+        required: ["productId", "quantity"],
+      },
+      CreateOrderPayload: {
+        type: "object",
+        properties: {
+          clientRequestId: {
+            type: "string",
+            maxLength: 80,
+            example: "ord-001",
+            description:
+              "Chave de idempotência. Obrigatória quando o header Idempotency-Key não é enviado.",
+          },
+          items: {
+            type: "array",
+            minItems: 1,
+            items: { $ref: "#/components/schemas/CreateOrderItemPayload" },
+          },
+        },
+        required: ["items"],
+      },
+      OrderItemProduct: {
+        type: "object",
+        properties: {
+          id: { type: "integer", example: 1 },
+          name: { type: "string", example: "X-Burger" },
+          price: { type: "string", example: "25.00" },
+        },
+        required: ["id", "name", "price"],
+      },
+      OrderItemResult: {
+        type: "object",
+        properties: {
+          id: { type: "integer", example: 1 },
+          orderId: { type: "integer", example: 1 },
+          productId: { type: "integer", example: 1 },
+          qty: { type: "integer", example: 2 },
+          unitPrice: { type: "string", example: "25.00" },
+          lineTotal: { type: "string", example: "50.00" },
+          order_id: { type: "integer", example: 1 },
+          product_id: { type: "integer", example: 1 },
+          product: { $ref: "#/components/schemas/OrderItemProduct" },
+        },
+        required: [
+          "id",
+          "orderId",
+          "productId",
+          "qty",
+          "unitPrice",
+          "lineTotal",
+        ],
+      },
+      UpdateOrderStatusPayload: {
+        type: "object",
+        properties: {
+          status: {
+            type: "string",
+            enum: ["CREATED", "CANCELED"],
+            example: "CANCELED",
+          },
+        },
+        required: ["status"],
+      },
+      OrderResponse: {
+        type: "object",
+        properties: {
+          id: { type: "integer", example: 1 },
+          clientRequestId: { type: "string", example: "ord-001" },
+          status: { type: "string", example: "CREATED" },
+          total: { type: "string", example: "50.00" },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+          items: {
+            type: "array",
+            items: { $ref: "#/components/schemas/OrderItemResult" },
+          },
+          reused: { type: "boolean", example: false },
+        },
+        required: ["id", "clientRequestId", "status", "total", "items"],
       },
       UpdateProductPayload: {
         type: "object",

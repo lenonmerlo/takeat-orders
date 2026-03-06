@@ -1,3 +1,4 @@
+import { Op } from "sequelize";
 import { Input } from "../models/index.js";
 
 export async function findAll() {
@@ -19,4 +20,12 @@ export async function createInput(data) {
 export async function save(input, transaction) {
   await input.save({ transaction });
   return input;
+}
+
+export async function findByIdsForUpdate(ids, transaction) {
+  return Input.findAll({
+    where: { id: { [Op.in]: ids } },
+    transaction,
+    lock: transaction.LOCK.UPDATE,
+  });
 }

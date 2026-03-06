@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE orders
+ALTER COLUMN client_request_id DROP NOT NULL;
+
+COMMIT;
